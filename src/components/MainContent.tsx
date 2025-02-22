@@ -5,19 +5,18 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useToast } from "@/hooks/use-toast";
-import { generateFeedback } from "@/lib/llm";
+import { generateFeedback, generateResume } from "@/lib/llm";
 import { useStore } from "@/store/useStore";
-import { Upload, Wand2 } from "lucide-react";
+import { Sparkles, Upload, Wand2 } from "lucide-react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { toast } from "react-toastify";
 import { LoadingOverlay } from "./LoadingOverlay";
 
 export function MainContent() {
   const { isLoading, setIsLoading, apiKey, model, industry } = useStore();
   const [file, setFile] = useState<File | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const { toast } = useToast();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -36,11 +35,7 @@ export function MainContent() {
       ) {
         setFile(selectedFile);
       } else {
-        toast({
-          title: "Unsupported file type",
-          description: "Please upload a PDF, DOCX, or TXT file.",
-          variant: "destructive",
-        });
+        toast.error("Please upload a PDF, DOCX, or TXT file.");
       }
     }
   };
@@ -53,20 +48,32 @@ export function MainContent() {
       const result = await generateFeedback(file, apiKey, model, industry);
       console.log(result);
       if (result.success) {
-        setFeedback(result.data);
+        setFeedback(result.message);
       } else {
-        toast({
-          title: "Error",
-          description: result.data,
-          variant: "destructive",
-        });
+        toast.error(result.message);
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to generate feedback. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to generate feedback. Please try again.");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerateResumeFromTemplate = async () => {
+    if (!apiKey || !file) return;
+
+    setIsLoading(true);
+    try {
+      const result = await generateResume(file, apiKey);
+      console.log(result);
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error("Failed to generate feedback. Please try again.");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -121,15 +128,20 @@ export function MainContent() {
                 </p>
               </Card>
 
-              <div className="flex justify-center">
+              <div className="flex justify-center gap-4">
                 <Button
-                  size="lg"
                   onClick={handleGenerateFeedback}
                   disabled={isLoading || !apiKey}
-                  className="w-full max-w-md"
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generate Feedback
+                </Button>
+                <Button
+                  onClick={handleGenerateResumeFromTemplate}
+                  disabled={isLoading || !apiKey}
                 >
                   <Wand2 className="mr-2 h-4 w-4" />
-                  Generate Feedback
+                  Use Resume Template
                 </Button>
               </div>
             </>

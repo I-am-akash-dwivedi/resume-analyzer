@@ -1,3 +1,4 @@
+import { DEFAULT_MODEL_FEEDBACK } from "@/lib/config";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -18,7 +19,7 @@ export const useStore = create<AppState>()(
   persist(
     (set) => ({
       apiKey: "",
-      model: "gemini-1.5-pro",
+      model: DEFAULT_MODEL_FEEDBACK,
       industry: "tech",
       isSidebarOpen: true,
       isLoading: false,
